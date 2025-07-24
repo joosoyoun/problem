@@ -1,97 +1,83 @@
-// 그림판(캔버스) 드로잉 기능
-function setupDrawpad(canvas, clearBtn) {
-  let drawing = false;
-  let ctx = canvas.getContext('2d');
-  let last = {x:0, y:0};
+from pathlib import Path
 
-  function getPos(e) {
-    if (e.touches) {
-      let rect = canvas.getBoundingClientRect();
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top
-      };
-    } else {
-      let rect = canvas.getBoundingClientRect();
-      return {
-        x: e.offsetX,
-        y: e.offsetY
-      };
-    }
-  }
+# Supabase + Canvas 기능 통합된 JS 코드 생성
+js_code = """
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  function start(e) {
-    drawing = true;
-    let pos = getPos(e);
-    last = pos;
+const supabaseUrl = 'https://gthpeppdugkodczaszbb.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0aHBlcHBkdWdrb2RjemFzemJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MTY3NTgsImV4cCI6MjA2NjQ5Mjc1OH0.tlXK4q9GHrdrs59X474iftcRyQqQWfVWd48W25lbI0A';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// 그림판 기능
+const canvases = document.querySelectorAll('.drawpad');
+
+canvases.forEach((canvas) => {
+  const ctx = canvas.getContext('2d');
+  let painting = false;
+
+  canvas.addEventListener('mousedown', () => painting = true);
+  canvas.addEventListener('mouseup', () => {
+    painting = false;
     ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    e.preventDefault();
-  }
-  function move(e) {
-    if (!drawing) return;
-    let pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = '#d63384';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-    last = pos;
-    e.preventDefault();
-  }
-  function end(e) {
-    drawing = false;
-    ctx.closePath();
-    e.preventDefault();
-  }
-
-  // Mouse
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  canvas.addEventListener('mouseup', end);
-  canvas.addEventListener('mouseleave', end);
-  // Touch
-  canvas.addEventListener('touchstart', start);
-  canvas.addEventListener('touchmove', move);
-  canvas.addEventListener('touchend', end);
-  canvas.addEventListener('touchcancel', end);
-
-  clearBtn.addEventListener('click', function() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
+  canvas.addEventListener('mouseleave', () => {
+    painting = false;
+    ctx.beginPath();
+  });
+  canvas.addEventListener('mousemove', draw);
+
+  function draw(e) {
+    if (!painting) return;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000';
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  }
+});
+
+// 지우기 기능
+const clearButtons = document.querySelectorAll('.clear-pad');
+clearButtons.forEach((button, index) => {
+  button.addEventListener('click', () => {
+    const ctx = canvases[index].getContext('2d');
+    ctx.clearRect(0, 0, canvases[index].width, canvases[index].height);
+  });
+});
+
+// Supabase 저장 함수
+async function saveToSupabase() {
+  const studentName = document.getElementById("studentName").value.trim();
+  const answerText = document.getElementById("answerTextarea").value.trim();
+
+  if (!studentName || !answerText) {
+    alert("이름과 답안을 모두 입력해주세요.");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("problem")
+    .insert([{ name: studentName, answer: answerText }]);
+
+  if (error) {
+    alert("❌ 저장 실패: " + error.message);
+  } else {
+    alert("✅ 저장 완료!");
+    document.getElementById("studentName").value = '';
+    document.getElementById("answerTextarea").value = '';
+  }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  // 모든 문제별 그림판 세팅
-  document.querySelectorAll('.problem').forEach(problem => {
-    let canvas = problem.querySelector('.drawpad');
-    let clearBtn = problem.querySelector('.clear-pad');
-    setupDrawpad(canvas, clearBtn);
-  });
+// 버튼 클릭 이벤트 연결
+document.getElementById("submitButton").addEventListener("click", (e) => {
+  e.preventDefault();
+  saveToSupabase();
+});
+"""
 
-  // 저장 버튼 클릭 시 데이터 수집
-  document.getElementById('problemsForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('studentName').value.trim();
-    if (!name) {
-      document.getElementById('saveStatus').textContent = '이름을 입력하세요!';
-      return;
-    }
-    let answers = [];
-    document.querySelectorAll('.problem').forEach((problem, idx) => {
-      let answer = problem.querySelector('.answer').value;
-      let solution = problem.querySelector('.solution').value;
-      let canvas = problem.querySelector('.drawpad');
-      let image = canvas.toDataURL('image/png');
-      answers.push({
-        problem: idx+1,
-        answer,
-        solution,
-        image
-      });
-    });
-    // TODO: 수파베이스 연동 (여기서 name, answers 배열 저장)
-    document.getElementById('saveStatus').textContent = '저장 기능은 곧 연결됩니다!';
-    // console.log({name, answers});
-  });
-}); 
+# 파일로 저장
+js_path = Path("/mnt/data/script_full.js")
+js_path.write_text(js_code.strip(), encoding="utf-8")
+js_path.name
