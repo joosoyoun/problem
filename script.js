@@ -1,22 +1,24 @@
-// 그림판(캔버스) 드로잉 기능
+// 그림판(캔버스) robust 드로잉 기능
 function setupDrawpad(canvas, clearBtn) {
+  if (!canvas || !clearBtn) return;
   let drawing = false;
   let ctx = canvas.getContext('2d');
   let last = {x:0, y:0};
 
   function getPos(e) {
-    if (e.touches) {
-      let rect = canvas.getBoundingClientRect();
+    let rect = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length > 0) {
       return {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top
       };
-    } else {
-      let rect = canvas.getBoundingClientRect();
+    } else if (typeof e.offsetX === 'number' && typeof e.offsetY === 'number') {
       return {
         x: e.offsetX,
         y: e.offsetY
       };
+    } else {
+      return {x:0, y:0};
     }
   }
 
@@ -45,16 +47,16 @@ function setupDrawpad(canvas, clearBtn) {
     e.preventDefault();
   }
 
-  // Mouse
+  // Mouse events
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
   canvas.addEventListener('mouseup', end);
   canvas.addEventListener('mouseleave', end);
-  // Touch
-  canvas.addEventListener('touchstart', start);
-  canvas.addEventListener('touchmove', move);
-  canvas.addEventListener('touchend', end);
-  canvas.addEventListener('touchcancel', end);
+  // Touch events
+  canvas.addEventListener('touchstart', start, {passive: false});
+  canvas.addEventListener('touchmove', move, {passive: false});
+  canvas.addEventListener('touchend', end, {passive: false});
+  canvas.addEventListener('touchcancel', end, {passive: false});
 
   clearBtn.addEventListener('click', function() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -78,9 +80,9 @@ function showSavePopup(msg) {
 // EmailJS 초기화
 emailjs.init('wLE5l2YjXRubD8MjC');
 
-function sendEmail(studentname, answer) {
-  emailjs.send(''problem', 'template_65k6mg6', {
-    student_name: name,
+function sendEmail(studentName, answer) {
+  emailjs.send('problem', 'template_65k6mg6', {
+    studentName: name,
     answers: JSON.stringify(answers, null, 2)
   }).then(function(response) {
     console.log('이메일 전송 성공!', response.status, response.text);
@@ -90,44 +92,18 @@ function sendEmail(studentname, answer) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // 모든 문제별 그림판 세팅
+  // robust하게 모든 문제별 그림판 세팅
   document.querySelectorAll('.problem').forEach(problem => {
     let canvas = problem.querySelector('.drawpad');
     let clearBtn = problem.querySelector('.clear-pad');
     setupDrawpad(canvas, clearBtn);
   });
 
-  // 저장 버튼 클릭 시 (submit 아님)
-  document.getElementById('saveBtn').addEventListener('click', function() {
-    const name = document.getElementById('studentName').value.trim();
-    if (!name) {
-      // document.getElementById('saveStatus').textContent = '이름을 입력하세요!';
-      return;
-    }
-    let answers = [];
-    document.querySelectorAll('.problem').forEach((problem, idx) => {
-      let answer = problem.querySelector('.answer').value;
-      let canvas = problem.querySelector('.drawpad');
-      let image = canvas.toDataURL('image/png');
-      answers.push({ answer, image });
-    });
-    // 로컬 저장
-    localStorage.setItem('homework_name', name);
-    localStorage.setItem('homework_answers', JSON.stringify(answers));
-    // 버튼 글씨 변경
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.textContent = '저장되었습니다.';
-    setTimeout(() => {
-      saveBtn.textContent = '저장하기';
-    }, 2000);
-    document.getElementById('saveStatus').textContent = '저장되었습니다.';
-  });
-
-  // 제출(폼 submit) 기존대로 동작
+  // 제출(폼 submit) - EmailJS로 전송
   document.getElementById('problemsForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const name = document.getElementById('studentName').value.trim();
-    let answers = [];
+    const answers = [];
     document.querySelectorAll('.problem').forEach((problem, idx) => {
       let answer = problem.querySelector('.answer').value;
       let canvas = problem.querySelector('.drawpad');
@@ -135,6 +111,27 @@ document.addEventListener('DOMContentLoaded', function() {
       answers.push({ answer, image });
     });
     sendEmail(name, answers);
-    document.getElementById('saveStatus').textContent = '제출되었습니다!';
+    document.getElementById('saveStatus').textContent = '제출하였습니다.';
   });
+
+  // 페이지 로드 시 복원
+  const savedName = localStorage.getItem('homework_name');
+  const savedAnswers = JSON.parse(localStorage.getItem('homework_answers') || '[]');
+  if (savedName) document.getElementById('studentName').value = savedName;
+  if (savedAnswers.length) {
+    document.querySelectorAll('.problem').forEach((problem, idx) => {
+      if (savedAnswers[idx]) {
+        problem.querySelector('.answer').value = savedAnswers[idx].answer || '';
+        // 그림판 복원
+        let canvas = problem.querySelector('.drawpad');
+        let ctx = canvas.getContext('2d');
+        let img = new window.Image();
+        img.onload = function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        if (savedAnswers[idx].image) img.src = savedAnswers[idx].image;
+      }
+    });
+  }
 }); 
