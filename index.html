@@ -6,6 +6,7 @@
   <title>자주 틀리는 문제 - 숙제 풀이 패드</title>
   <link rel="stylesheet" href="style.css">
 </head>
+  
 <body>
   <div class="container">
     <h1>자주 틀리는 문제 (숙제용)</h1>
@@ -60,10 +61,56 @@
           <button type="button" class="clear-pad">그림판 지우기</button>
         </div>
       </div>
-      <button type="submit" class="save-btn">저장하기</button>
+     
+
+       
+  <textarea id="answerTextarea" placeholder="풀이 입력"></textarea>
+  <button id="submitButton" type="button">제출하기</button>
+       <button type="submit" class="save-btn">저장하기</button>
+      
     </form>
     <div id="saveStatus"></div>
   </div>
+
+
+
   <script src="script.js"></script>
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+  // ① Supabase 연결 정보
+  const supabaseUrl = 'https://gthpeppdugkodczaszbb.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0aHBlcHBkdWdrb2RjemFzemJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MTY3NTgsImV4cCI6MjA2NjQ5Mjc1OH0.tlXK4q9GHrdrs59X474iftcRyQqQWfVWd48W25lbI0A';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // ② 제출 함수
+  async function saveToSupabase() {
+    const studentName = document.getElementById("studentName").value.trim();
+    const answerText = document.getElementById("answerTextarea").value.trim();
+
+    if (!studentName || !answerText) {
+      alert("이름과 답안을 모두 입력해주세요.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("problem")  // 👈 Supabase에 만든 테이블 이름
+      .insert([{ name: studentName, answer: answerText }]);
+
+    if (error) {
+      alert("❌ 저장 실패: " + error.message);
+    } else {
+      alert("✅ 저장 완료!");
+      document.getElementById("studentName").value = '';
+      document.getElementById("answerTextarea").value = '';
+    }
+  }
+
+  // ③ 버튼 클릭 시 실행
+  document.getElementById("submitButton").addEventListener("click", (e) => {
+    e.preventDefault();
+    saveToSupabase();
+  });
+</script>
 </body>
 </html> 
