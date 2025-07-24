@@ -1,4 +1,3 @@
-
 // 그림판(캔버스) robust 드로잉 기능
 function setupDrawpad(canvas, clearBtn) {
   if (!canvas || !clearBtn) return;
