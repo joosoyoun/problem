@@ -78,8 +78,8 @@ function showSavePopup(msg) {
 // EmailJS 초기화
 emailjs.init('wLE5l2YjXRubD8MjC');
 
-function sendEmail(name, answers) {
-  emailjs.send('problem', 'template_0gt3wi4', {
+function sendEmail(studentname, answer) {
+  emailjs.send(''problem', 'template_65k6mg6', {
     student_name: name,
     answers: JSON.stringify(answers, null, 2)
   }).then(function(response) {
