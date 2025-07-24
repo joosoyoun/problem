@@ -136,13 +136,33 @@ label {
   padding: 14px 0;
   font-size: 1.2rem;
   font-weight: 700;
-  margin: 32px 0 0 0;
+  margin: 32px 0 12px 0;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(255, 182, 213, 0.10);
   transition: background 0.2s;
 }
 .save-btn:hover {
   background: #d63384;
+}
+
+.submit-btn {
+  display: block;
+  width: 100%;
+  background: #e9ecef;
+  color: #495057;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(200, 200, 200, 0.10);
+  transition: background 0.2s;
+}
+.submit-btn:hover {
+  background: #adb5bd;
+  color: #fff;
 }
 
 #saveStatus {
@@ -160,6 +180,28 @@ label {
   margin: 0 auto 12px auto;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(255,182,213,0.10);
+}
+
+.save-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  background: rgba(255, 182, 213, 0.97);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding: 32px 48px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(255, 182, 213, 0.18);
+  opacity: 0;
+  z-index: 9999;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+.save-popup.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 @media (max-width: 600px) {
